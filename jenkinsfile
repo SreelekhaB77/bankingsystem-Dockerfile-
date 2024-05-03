@@ -1,0 +1,23 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('clone') {
+            steps {
+                git branch: 'main', url: 'https://github.com/SreelekhaB77/bankingsystem-Dockerfile-.git'
+            }
+        }
+        stage('Build-image') {
+            steps {
+                sh'docker build -t mybankimg .'
+            }
+        }
+        stage('deploy-to-the container') {
+            steps {
+                sh'docker run -d -p 8000:8000 mybankimg'
+            }
+        }
+    }
+}
+
+# sudo usermod -aG docker jenkins
