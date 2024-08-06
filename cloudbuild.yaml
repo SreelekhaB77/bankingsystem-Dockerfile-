@@ -58,7 +58,7 @@ steps:
       - '-c'
       - |
         gcloud compute ssh sree@instance-0608a --zone=us-central1-f --command "
-          sudo rm /etc/nginx/sites-enabled/default && \
+          #sudo rm /etc/nginx/sites-enabled/default && \
           echo 'server {
             listen 80;
             server_name 34.136.99.124;
