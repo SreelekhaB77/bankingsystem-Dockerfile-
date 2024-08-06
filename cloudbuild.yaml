@@ -55,9 +55,10 @@ steps:
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:
-      - '-c'
-      - |
-        gcloud compute ssh sree@instance-0608a --zone=us-central1-f --command "
+    - '-c'
+    - |
+      gcloud compute ssh sree@instance-0608a --zone=us-central1-f --command "
+
         echo 'server {
           listen 80;
           server_name 34.136.99.124;
@@ -73,6 +74,8 @@ steps:
         sudo nginx -t && \
         sudo systemctl restart nginx
       "
+
+
 
   # Step 7: Start Gunicorn
   - name: 'gcr.io/cloud-builders/gcloud'
