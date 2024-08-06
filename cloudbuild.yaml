@@ -4,7 +4,7 @@ options:
 steps:
   # Step 1: Copy project files from Cloud Storage to build environment
   - name: 'gcr.io/cloud-builders/gsutil'
-    args: ['cp', '-r', 'gs://bucket-0608/django/bankingsystem-Dockerfile--main', '.']
+    args: ['cp', '-r', 'gs://bucket-0608a/django/bankingsystem-Dockerfile--main', '.']
 
   # Step 2: Upload the files to the VM instance
   - name: 'gcr.io/cloud-builders/gcloud'
@@ -58,22 +58,21 @@ steps:
       - '-c'
       - |
         gcloud compute ssh sree@instance-0608a --zone=us-central1-f --command "
-          #sudo rm /etc/nginx/sites-enabled/default && \
-          echo 'server {
-            listen 80;
-            server_name 34.136.99.124;
-            location / {
-              proxy_pass http://127.0.0.1:8000;
-              proxy_set_header Host \$host;
-              proxy_set_header X-Real-IP \$remote_addr;
-              proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-              proxy_set_header X-Forwarded-Proto \$scheme;
-            }
-          }' | sudo tee /etc/nginx/sites-available/bankingsystem && \
-          sudo ln -s /etc/nginx/sites-available/bankingsystem /etc/nginx/sites-enabled && \
-          sudo nginx -t && \
-          sudo systemctl restart nginx
-        "
+        echo 'server {
+          listen 80;
+          server_name 34.136.99.124;
+          location / {
+            proxy_pass http://127.0.0.1:8000;
+            proxy_set_header Host \$host;
+            proxy_set_header X-Real-IP \$remote_addr;
+            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto \$scheme;
+          }
+        }' | sudo tee /etc/nginx/sites-available/bankingsystem && \
+        sudo ln -sf /etc/nginx/sites-available/bankingsystem /etc/nginx/sites-enabled/bankingsystem && \
+        sudo nginx -t && \
+        sudo systemctl restart nginx
+      "
 
   # Step 7: Start Gunicorn
   - name: 'gcr.io/cloud-builders/gcloud'
