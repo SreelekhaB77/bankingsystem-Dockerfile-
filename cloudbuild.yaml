@@ -12,7 +12,7 @@ steps:
     args:
       - '-c'
       - |
-        gcloud compute scp --recurse * sree@instance-0608:/tmp --zone=us-central1-b
+        gcloud compute scp --recurse * sree@instance-0608a:/tmp --zone=us-central1-f
 
   # Step 3: Move files to the target directory with proper permissions
   - name: 'gcr.io/cloud-builders/gcloud'
@@ -20,7 +20,7 @@ steps:
     args:
       - '-c'
       - |
-        gcloud compute ssh sree@instance-0608 --zone=us-central1-b --command "
+        gcloud compute ssh sree@instance-0608a --zone=us-central1-f --command "
           sudo mkdir -p /home/sree/ && \
           sudo mv /tmp/* /home/sree/ && \
           sudo chown -R sree:sree /home/sree/
@@ -32,7 +32,7 @@ steps:
     args:
       - '-c'
       - |
-        gcloud compute ssh sree@instance-0608 --zone=us-central1-b --command "
+        gcloud compute ssh sree@instance-0608a --zone=us-central1-f --command "
           sudo mkdir -p /home/sree/myenv && \
           sudo chown -R sree:sree /home/sree/myenv && \
           sudo chmod -R u+rwx /home/sree/myenv
@@ -44,7 +44,7 @@ steps:
     args:
       - '-c'
       - |
-        gcloud compute ssh sree@instance-0608 --zone=us-central1-b --command "
+        gcloud compute ssh sree@instance-0608a --zone=us-central1-f --command "
           sudo apt update && \
           sudo apt install -y python3-pip python3-venv nginx && \
           sudo -u sree python3 -m venv /home/sree/myenv && \
@@ -57,11 +57,11 @@ steps:
     args:
       - '-c'
       - |
-        gcloud compute ssh sree@instance-0608 --zone=us-central1-b --command "
+        gcloud compute ssh sree@instance-0608a --zone=us-central1-f --command "
           sudo rm /etc/nginx/sites-enabled/default && \
           echo 'server {
             listen 80;
-            server_name 34.31.234.89;
+            server_name 34.136.99.124;
             location / {
               proxy_pass http://127.0.0.1:8000;
               proxy_set_header Host \$host;
@@ -81,7 +81,7 @@ steps:
     args:
       - '-c'
       - |
-        gcloud compute ssh sree@instance-0608 --zone=us-central1-b --command "
+        gcloud compute ssh sree@instance-0608a --zone=us-central1-f --command "
           cd /home/sree/bankingsystem-Dockerfile--main && \
           source /home/sree/myenv/bin/activate && \
           gunicorn --workers 3 --bind 0.0.0.0:8000 banking_system.wsgi:application
