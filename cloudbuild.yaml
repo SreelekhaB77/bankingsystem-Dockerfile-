@@ -88,6 +88,8 @@ steps:
         gcloud compute ssh sree@instance-0808 --zone=us-central1-f --command "
           # Stop any running Gunicorn processes
           pkill gunicorn || true && \
+          # Wait for a few seconds to ensure Gunicorn has stopped
+          sleep 5 && \
           cd /home/sree/sri/bankingsystem-Dockerfile--main && \
           source /home/sree/sri/myenv/bin/activate && \
           gunicorn --workers 3 --bind 0.0.0.0:8000 banking_system.wsgi:application
