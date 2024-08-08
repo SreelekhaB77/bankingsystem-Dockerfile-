@@ -4,7 +4,7 @@ options:
 steps:
   # Step 1: Copy project files from Cloud Storage to build environment
   - name: 'gcr.io/cloud-builders/gsutil'
-    args: ['cp', '-r', 'gs://bucket-0608a/django/bankingsystem-Dockerfile--main', '.']
+    args: ['cp', '-r', 'gs://bucket-0708/django/bankingsystem-Dockerfile--main', '.']
 
   # Step 2: Upload the files to the VM instance
   - name: 'gcr.io/cloud-builders/gcloud'
@@ -12,30 +12,35 @@ steps:
     args:
       - '-c'
       - |
-        gcloud compute scp --recurse * sree@instance-0608a:/tmp --zone=us-central1-f
+        gcloud compute scp --recurse * sree@instance-0808:/tmp --zone=us-central1-f
 
-  # Step 3: Move files to the target directory with proper permissions
+  # Step 3: Create new directory, move files, and set proper ownership
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        gcloud compute ssh sree@instance-0608a --zone=us-central1-f --command "
-          sudo mkdir -p /home/sree/ && \
-          sudo mv /tmp/* /home/sree/ && \
-          sudo chown -R sree:sree /home/sree/
+        gcloud compute ssh sree@instance-0808 --zone=us-central1-f --command "
+          # delete directory sri if already exists
+          sudo rm -rf /home/sree/sri/ && \
+          # Create a new directory in the user's home directory
+          sudo mkdir -p /home/sree/sri && \
+          # Move files from /tmp to the new directory
+          sudo mv /tmp/* /home/sree/sri/ && \
+          # Change ownership to the 'sree' user
+          sudo chown -R sree:sree /home/sree/sri/
         "
 
-  # Step 4: Create the myenv directory, change ownership, and set permissions
+  # Step 4: Create 'myenv' directory, set permissions
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        gcloud compute ssh sree@instance-0608a --zone=us-central1-f --command "
-          sudo mkdir -p /home/sree/myenv && \
-          sudo chown -R sree:sree /home/sree/myenv && \
-          sudo chmod -R u+rwx /home/sree/myenv
+        gcloud compute ssh sree@instance-0808 --zone=us-central1-f --command "
+          sudo mkdir -p /home/sree/sri/myenv && \
+          sudo chown -R sree:sree /home/sree/sri/myenv && \
+          sudo chmod -R u+rwx /home/sree/sri/myenv
         "
 
   # Step 5: Install Python, Django, Gunicorn, and Nginx
@@ -44,38 +49,35 @@ steps:
     args:
       - '-c'
       - |
-        gcloud compute ssh sree@instance-0608a --zone=us-central1-f --command "
+        gcloud compute ssh sree@instance-0808 --zone=us-central1-f --command "
           sudo apt update && \
           sudo apt install -y python3-pip python3-venv nginx && \
-          sudo -u sree python3 -m venv /home/sree/myenv && \
-          sudo -u sree /home/sree/myenv/bin/pip install django celery django_celery_beat gunicorn
+          sudo -u sree python3 -m venv /home/sree/sri/myenv && \
+          sudo -u sree /home/sree/sri/myenv/bin/pip install django celery django_celery_beat gunicorn
         "
 
   # Step 6: Configure Nginx
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:
-    - '-c'
-    - |
-      gcloud compute ssh sree@instance-0608a --zone=us-central1-f --command "
-
-        echo 'server {
-          listen 80;
-          server_name 34.136.99.124;
-          location / {
-            proxy_pass http://127.0.0.1:8000;
-            proxy_set_header Host \$host;
-            proxy_set_header X-Real-IP \$remote_addr;
-            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto \$scheme;
-          }
-        }' | sudo tee /etc/nginx/sites-available/bankingsystem && \
-        sudo ln -sf /etc/nginx/sites-available/bankingsystem /etc/nginx/sites-enabled/bankingsystem && \
-        sudo nginx -t && \
-        sudo systemctl restart nginx
-      "
-
-
+      - '-c'
+      - |
+        gcloud compute ssh sree@instance-0808 --zone=us-central1-f --command "
+          echo 'server {
+            listen 80;
+            server_name 34.69.99.157;
+            location / {
+              proxy_pass http://127.0.0.1:8000;
+              proxy_set_header Host \$host;
+              proxy_set_header X-Real-IP \$remote_addr;
+              proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto \$scheme;
+            }
+          }' | sudo tee /etc/nginx/sites-available/bankingsystem && \
+          sudo ln -sf /etc/nginx/sites-available/bankingsystem /etc/nginx/sites-enabled/bankingsystem && \
+          sudo nginx -t && \
+          sudo systemctl restart nginx
+        "
 
   # Step 7: Start Gunicorn
   - name: 'gcr.io/cloud-builders/gcloud'
@@ -83,11 +85,15 @@ steps:
     args:
       - '-c'
       - |
-        gcloud compute ssh sree@instance-0608a --zone=us-central1-f --command "
-          cd /home/sree/bankingsystem-Dockerfile--main && \
-          source /home/sree/myenv/bin/activate && \
+        gcloud compute ssh sree@instance-0808 --zone=us-central1-f --command "
+          # Stop any running Gunicorn processes
+          pkill gunicorn || true && \
+          cd /home/sree/sri/bankingsystem-Dockerfile--main && \
+          source /home/sree/sri/myenv/bin/activate && \
           gunicorn --workers 3 --bind 0.0.0.0:8000 banking_system.wsgi:application
         "
 
 # Optional: Set the timeout for the build (default is 10 minutes)
 timeout: '1200s'
+
+
