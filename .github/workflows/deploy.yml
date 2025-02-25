@@ -1,0 +1,28 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - main  # Runs on push to the main branch
+
+jobs:
+  deploy:
+    runs-on: self-hosted  # Uses your self-hosted runner
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4  # Fetch latest code
+
+      - name: Stop Existing Container
+        run: |
+          docker stop mybankcont || true
+          docker rm mybankcont || true
+
+      - name: Build and Run Docker Container
+        run: |
+          docker build -t bankingimg .
+          docker run -d --name mybankcont -p 8000:8000 bankingimg
+
+      - name: Cleanup Old Docker Images
+        run: docker system prune -af
+
